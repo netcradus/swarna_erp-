@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import {
   Gem, ShieldCheck, Users, Package, Diamond, Hammer, RefreshCcw, Building2,
   Receipt, BarChart3, Lock, Cloud, Smartphone, Laptop, Monitor, Tablet,
@@ -11,6 +12,13 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip,
   PieChart, Pie, Cell, BarChart, Bar, CartesianGrid,
 } from "recharts";
+
+import { AuthProvider } from "./auth/AuthContext";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import LoginPage from "./pages/LoginPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import DashboardPage from "./pages/DashboardPage";
+import PoweredByBadge from "./components/common/PoweredByBadge";
 
 /* ------------------------------------------------------------------ */
 /*  Design tokens                                                      */
@@ -118,6 +126,7 @@ function Navbar() {
           <span className="nav__brand-text">
             Svarna<span className="nav__brand-accent">ERP</span>
           </span>
+          <PoweredByBadge />
         </a>
 
         <nav className="nav__links">
@@ -129,7 +138,7 @@ function Navbar() {
         </nav>
 
         <div className="nav__actions">
-          <a href="#login" className="nav__login">Login</a>
+          <Link to="/login" className="nav__login">Login</Link>
           <a href="#demo" className="btn btn--gold btn--sm">
             Book a Demo
           </a>
@@ -148,7 +157,7 @@ function Navbar() {
             </a>
           ))}
           <div className="nav__mobile-actions">
-            <a href="#login" className="nav__login">Login</a>
+            <Link to="/login" className="nav__login" onClick={() => setOpen(false)}>Login</Link>
             <a href="#demo" className="btn btn--gold btn--sm">Book a Demo</a>
           </div>
         </div>
@@ -291,18 +300,24 @@ function Hero() {
                 </div>
               </div>
 
-              <div className="dash-mock__chart">
-                <ResponsiveContainer width="100%" height={110}>
-                  <AreaChart data={salesTrend}>
-                    <defs>
-                      <linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={GOLD} stopOpacity={0.5} />
-                        <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area type="monotone" dataKey="v" stroke={GOLD} strokeWidth={2} fill="url(#heroFill)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="dash-mock__chart-area">
+                <div className="dash-mock__chart">
+                  <ResponsiveContainer width="100%" height={120}>
+                    <AreaChart data={salesTrend}>
+                      <defs>
+                        <linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={GOLD} stopOpacity={0.5} />
+                          <stop offset="100%" stopColor={GOLD} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <Area type="monotone" dataKey="v" stroke={GOLD} strokeWidth={2} fill="url(#heroFill)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="hero__calc-wrap">
+                  <GoldCalcSignature />
+                </div>
               </div>
 
               <div className="dash-mock__foot">
@@ -338,10 +353,6 @@ function Hero() {
               <span>Inventory</span>
               <b>12,450 Items</b>
             </div>
-          </div>
-
-          <div className="hero__calc-wrap">
-            <GoldCalcSignature />
           </div>
         </div>
       </div>
@@ -1022,9 +1033,11 @@ function GlobalStyles() {
       .nav--scrolled { padding: 12px 0; background: rgba(10,10,11,0.72); backdrop-filter: blur(16px) saturate(140%); border-bottom-color: var(--line); }
       .nav__inner { max-width: 1180px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
       .nav__brand { display: flex; align-items: center; gap: 10px; }
-      .nav__mark { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(201,162,39,0.25), rgba(201,162,39,0.05)); border: 1px solid rgba(201,162,39,0.35); color: var(--gold-light); }
+      .nav__mark { width: 34px; height: 34px; border-radius: 99px; display: grid; place-items: center; background: linear-gradient(135deg, rgba(201,162,39,0.25), rgba(201,162,39,0.05)); border: 1px solid rgba(201,162,39,0.35); color: var(--gold-light); }
       .nav__brand-text { font-family: 'Fraunces', serif; font-size: 19px; letter-spacing: -0.01em; }
       .nav__brand-accent { color: var(--gold-light); }
+      .nav__powered { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); background: rgba(201,162,39,0.08); border: 1px solid rgba(201,162,39,0.25); padding: 3px 9px; border-radius: 999px; display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; }
+      .nav__powered-brand { color: var(--gold-light); font-weight: 600; }
       .nav__links { display: flex; gap: 30px; }
       .nav__link { font-size: 14px; color: var(--muted); transition: color .2s ease; }
       .nav__link:hover { color: var(--ivory); }
@@ -1047,40 +1060,42 @@ function GlobalStyles() {
       .hero__glow { position: absolute; top: -220px; left: 50%; transform: translateX(-50%); width: 900px; height: 500px; background: radial-gradient(ellipse at center, rgba(201,162,39,0.16), transparent 70%); pointer-events: none; }
       .hero__inner { max-width: 1180px; margin: 0 auto; padding: 0 24px; position: relative; text-align: center; }
       .hero__eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(201,162,39,0.3); background: rgba(201,162,39,0.06); font-size: 13px; color: var(--gold-light); margin-bottom: 26px; }
-      .hero__title { font-size: clamp(38px, 6vw, 68px); line-height: 1.08; margin-bottom: 22px; }
-      .hero__sub { max-width: 640px; margin: 0 auto 34px; font-size: 17px; }
+      .hero__title { font-size: clamp(38px, 6vw, 68px); line-height: 1.08; margin-bottom: 22px; text-align: center; }
+      .hero__sub { max-width: 680px; margin: 0 auto 34px; font-size: 17px; text-align: center; }
       .hero__ctas { display: flex; justify-content: center; gap: 16px; margin-bottom: 32px; }
       .hero__trust { display: flex; justify-content: center; gap: 26px; flex-wrap: wrap; margin-bottom: 70px; }
       .hero__trust span { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
       .hero__trust svg { color: var(--gold); }
 
-      .hero__visual { position: relative; max-width: 900px; margin: 0 auto; padding-bottom: 40px; }
-      .dash-mock { text-align: left; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px 24px; backdrop-filter: blur(20px); box-shadow: 0 30px 70px -20px rgba(0,0,0,0.6); }
+      .hero__visual { position: relative; max-width: 940px; margin: 0 auto; padding-bottom: 20px; }
+      .dash-mock { position: relative; text-align: left; background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px 24px; backdrop-filter: blur(20px); box-shadow: 0 30px 70px -20px rgba(0,0,0,0.6); overflow: hidden; }
       .dash-mock--float { animation: floatY 6s ease-in-out infinite; }
       .dash-mock__bar { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
       .dash-mock__dots { display: flex; gap: 5px; }
       .dash-mock__dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); }
       .dash-mock__title { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--muted); letter-spacing: 0.04em; }
       .dash-mock__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+      @media (max-width: 640px) { .dash-mock__stats { grid-template-columns: repeat(2, 1fr); } }
       .dash-stat { background: rgba(255,255,255,0.03); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
       .dash-stat span { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; }
       .dash-stat b { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; }
-      .dash-mock__chart { margin: 4px 0 12px; }
+      
+      .dash-mock__chart-area { display: grid; grid-template-columns: 1fr 270px; gap: 18px; align-items: center; margin: 10px 0 16px; }
+      @media (max-width: 820px) { .dash-mock__chart-area { grid-template-columns: 1fr; } }
+      .dash-mock__chart { width: 100%; min-width: 0; }
+      .hero__calc-wrap { width: 100%; z-index: 5; text-align: left; }
+
       .dash-mock__foot { display: flex; justify-content: space-between; padding-top: 14px; border-top: 1px solid var(--line); }
       .dash-mock__foot span { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
       .dash-mock__foot b { font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
 
-      .float-card { position: absolute; display: flex; align-items: center; gap: 10px; background: rgba(19,18,23,0.9); border: 1px solid rgba(201,162,39,0.3); border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(14px); box-shadow: 0 14px 30px -10px rgba(0,0,0,0.5); color: var(--gold-light); }
+      .float-card { position: absolute; display: flex; align-items: center; gap: 10px; background: rgba(19,18,23,0.92); border: 1px solid rgba(201,162,39,0.35); border-radius: 12px; padding: 9px 13px; backdrop-filter: blur(14px); box-shadow: 0 14px 30px -10px rgba(0,0,0,0.6); color: var(--gold-light); z-index: 20; }
       .float-card span { display: block; font-size: 10.5px; color: var(--muted); }
-      .float-card b { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ivory); font-weight: 500; }
-      .float-card--1 { top: -18px; left: -30px; animation: floatY 5s ease-in-out infinite; }
-      .float-card--2 { top: 40%; right: -40px; animation: floatY 5.6s ease-in-out infinite 0.4s; }
-      .float-card--3 { bottom: -14px; left: 6%; animation: floatY 5.2s ease-in-out infinite 0.8s; }
-
-      .hero__calc-wrap { display: none; }
-      @media (min-width: 1080px) {
-        .hero__calc-wrap { display: block; position: absolute; top: 18%; right: -230px; width: 230px; }
-      }
+      .float-card b { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ivory); font-weight: 500; }
+      .float-card--1 { top: -16px; left: 16px; animation: floatY 5s ease-in-out infinite; }
+      .float-card--2 { top: -16px; right: 16px; animation: floatY 5.6s ease-in-out infinite 0.4s; }
+      .float-card--3 { bottom: -12px; left: 24px; animation: floatY 5.2s ease-in-out infinite 0.8s; }
+      @media (max-width: 640px) { .float-card { display: none; } }
 
       .calc { background: rgba(19,18,23,0.92); border: 1px solid rgba(201,162,39,0.28); border-radius: 16px; padding: 18px; backdrop-filter: blur(16px); box-shadow: 0 20px 50px -16px rgba(0,0,0,0.6); }
       .calc__head { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.05em; color: var(--gold-light); margin-bottom: 14px; font-family: 'IBM Plex Mono', monospace; }
@@ -1241,9 +1256,9 @@ function GlobalStyles() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  App                                                                 */
+/*  Landing Page & Router Setup                                         */
 /* ------------------------------------------------------------------ */
-export default function App() {
+function LandingPage() {
   return (
     <div className="jerp">
       <GlobalStyles />
@@ -1262,5 +1277,49 @@ export default function App() {
       <CTA />
       <Footer />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/login"
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <LoginPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              <ProtectedRoute requireAuth={false}>
+                <ForgotPasswordPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute requireAuth={true}>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
