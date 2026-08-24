@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useAuth } from "../../auth/AuthContext";
 import PoweredByBadge from "../common/PoweredByBadge";
 import {
